@@ -1,0 +1,133 @@
+{
+  "markets": [
+    {
+      "code": "JP",
+      "name": "Japan",
+      "exchange_name": "Tokyo Stock Exchange",
+      "exchange_calendar_code": "XTKS",
+      "timezone": "Asia/Tokyo",
+      "trading_hours": {
+        "open": "09:00",
+        "close": "15:00",
+        "lunch_break": {
+          "start": "11:30",
+          "end": "12:30"
+        }
+      },
+      "settlement_cycle": 1,
+      "currency": "JPY",
+      "depository_cut_off": "14:00"
+    },
+    {
+      "code": "HK",
+      "name": "Hong Kong",
+      "exchange_name": "Hong Kong Stock Exchange",
+      "exchange_calendar_code": "XHKG",
+      "timezone": "Asia/Hong_Kong",
+      "trading_hours": {
+        "open": "09:30",
+        "close": "16:00",
+        "lunch_break": {
+          "start": "12:00",
+          "end": "13:00"
+        }
+      },
+      "settlement_cycle": 1,
+      "currency": "HKD",
+      "depository_cut_off": "15:45"
+    },
+    {
+      "code": "SG",
+      "name": "Singapore",
+      "exchange_name": "Singapore Exchange",
+      "exchange_calendar_code": "XSES",
+      "timezone": "Asia/Singapore",
+      "trading_hours": {
+        "open": "09:00",
+        "close": "17:00",
+        "lunch_break": null
+      },
+      "settlement_cycle": 1,
+      "currency": "SGD",
+      "depository_cut_off": "16:00"
+    },
+    {
+      "code": "IN",
+      "name": "India",
+      "exchange_name": "National Stock Exchange of India",
+      "exchange_calendar_code": "XNSE",
+      "timezone": "Asia/Kolkata",
+      "trading_hours": {
+        "open": "09:15",
+        "close": "15:30",
+        "lunch_break": null
+      },
+      "settlement_cycle": 1,
+      "currency": "INR",
+      "depository_cut_off": "13:30"
+    },
+    {
+      "code": "AU",
+      "name": "Australia",
+      "exchange_name": "Australian Securities Exchange",
+      "exchange_calendar_code": "XASX",
+      "timezone": "Australia/Sydney",
+      "trading_hours": {
+        "open": "10:00",
+        "close": "16:00",
+        "lunch_break": null
+      },
+      "settlement_cycle": 1,
+      "currency": "AUD",
+      "depository_cut_off": "11:30"
+    },
+    {
+      "code": "KR",
+      "name": "South Korea",
+      "exchange_name": "Korea Exchange",
+      "exchange_calendar_code": "XKRX",
+      "timezone": "Asia/Seoul",
+      "trading_hours": {
+        "open": "09:00",
+        "close": "15:30",
+        "lunch_break": null
+      },
+      "settlement_cycle": 1,
+      "currency": "KRW",
+      "depository_cut_off": "16:00"
+    },
+    {
+      "code": "TW",
+      "name": "Taiwan",
+      "exchange_name": "Taiwan Stock Exchange",
+      "exchange_calendar_code": "XTAI",
+      "timezone": "Asia/Taipei",
+      "trading_hours": {
+        "open": "09:00",
+        "close": "13:30",
+        "lunch_break": null
+      },
+      "settlement_cycle": 1,
+      "currency": "TWD",
+      "depository_cut_off": "14:00"
+    },
+    {
+      "code": "CN",
+      "name": "China",
+      "exchange_name": "Shanghai Stock Exchange",
+      "exchange_calendar_code": "XSHG",
+      "timezone": "Asia/Shanghai",
+      "trading_hours": {
+        "open": "09:30",
+        "close": "15:00",
+        "lunch_break": {
+          "start": "11:30",
+          "end": "13:00"
+        }
+      },
+      "settlement_cycle": 1,
+      "currency": "CNY",
+      "depository_cut_off": "15:30"
+    }
+  ]
+}

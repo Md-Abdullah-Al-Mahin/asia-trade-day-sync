@@ -1,0 +1,15 @@
+# Core
+pydantic>=2.5.0
+
+# Date/Time & Calendar
+python-dateutil>=2.8.2
+pytz>=2024.1
+holidays>=0.40
+exchange-calendars>=4.5.0
+
+# Dashboard
+streamlit>=1.30.0
+plotly>=5.18.0
+
+# Testing
+pytest>=7.4.0
