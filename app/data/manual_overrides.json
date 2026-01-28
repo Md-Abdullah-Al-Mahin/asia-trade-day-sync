@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "description": "Manual holiday overrides for special closures",
+  "overrides": [
+    {
+      "date": "2026-08-15",
+      "market_code": "HK",
+      "name": "Typhoon Signal 8",
+      "reason": "Example: Tropical storm warning - market closed",
+      "is_closure": true,
+      "affects_trading": true,
+      "affects_settlement": true,
+      "created_at": "2026-01-28"
+    },
+    {
+      "date": "2026-09-01",
+      "market_code": "TW",
+      "name": "Typhoon Closure",
+      "reason": "Typhoon warning level 8",
+      "is_closure": true,
+      "affects_trading": true,
+      "affects_settlement": true,
+      "created_at": "2026-01-28"
+    }
+  ]
+}
