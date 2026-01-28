@@ -2,7 +2,7 @@
 Holiday calendar models.
 """
 
-from datetime import date
+from datetime import date as date_type
 from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field
@@ -20,7 +20,7 @@ class Holiday(BaseModel):
     """Holiday calendar entry."""
     
     market_code: str = Field(..., description="Market code")
-    date: date = Field(..., description="Holiday date")
+    date: date_type = Field(..., description="Holiday date")
     name: str = Field(..., description="Holiday name")
     holiday_type: HolidayType = Field(
         default=HolidayType.FULL_DAY, description="Type of holiday"
