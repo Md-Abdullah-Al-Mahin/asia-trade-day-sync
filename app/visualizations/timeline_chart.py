@@ -122,22 +122,22 @@ def create_trading_hours_gantt(
     # Create figure
     fig = go.Figure()
     
-    # Define colors
+    # Muted, readable palette (works on light and dark)
     colors = {
-        "trading_a": "#28a745",      # Green for market A trading hours
-        "trading_b": "#17a2b8",      # Teal for market B trading hours
-        "lunch": "#FFD700",          # Gold for lunch break
-        "closed": "#f0f0f0",         # Light gray for closed
-        "holiday": "#dc3545",        # Red for holiday
-        "cutoff": "#fd7e14",         # Orange for cut-off
-        "execution": "#6f42c1",      # Purple for execution time
-        "overlap": "rgba(255, 193, 7, 0.3)",  # Semi-transparent yellow for overlap
+        "trading_a": "#059669",       # Muted green
+        "trading_b": "#0d9488",      # Muted teal
+        "lunch": "#d4d4d8",          # Neutral gray for lunch
+        "closed": "#f4f4f5",         # Very light gray
+        "holiday": "#b91c1c",        # Muted red
+        "cutoff": "#ea580c",         # Muted orange
+        "execution": "#7c3aed",      # Muted violet
+        "overlap": "rgba(148, 163, 184, 0.25)",  # Soft slate fill, no busy border
     }
     
-    # Y positions for the two markets
+    # Y positions and bar size (larger bars for clarity)
     y_market_a = 1.0
     y_market_b = 0.0
-    bar_height = 0.35
+    bar_height = 0.38
     
     # Time range for x-axis (0:00 to 24:00 UTC)
     x_start = datetime.combine(target_date, time(0, 0), tzinfo=ZoneInfo("UTC"))
@@ -243,7 +243,7 @@ def create_trading_hours_gantt(
             x=[mid_a],
             y=[y_market_a],
             mode='markers',
-            marker=dict(color=colors["trading_a"], size=12, symbol='square'),
+            marker=dict(color=colors["trading_a"], size=14, symbol='square'),
             name=f"{market_a.name} Trading",
             showlegend=True,
             hovertemplate=f"{market_a.name}<br>{times_a['open_utc'].strftime('%H:%M')} - {times_a['close_utc'].strftime('%H:%M')} UTC<extra></extra>"
@@ -319,7 +319,7 @@ def create_trading_hours_gantt(
             x=[mid_b],
             y=[y_market_b],
             mode='markers',
-            marker=dict(color=colors["trading_b"], size=12, symbol='square'),
+            marker=dict(color=colors["trading_b"], size=14, symbol='square'),
             name=f"{market_b.name} Trading",
             showlegend=True,
             hovertemplate=f"{market_b.name}<br>{times_b['open_utc'].strftime('%H:%M')} - {times_b['close_utc'].strftime('%H:%M')} UTC<extra></extra>"
@@ -330,7 +330,7 @@ def create_trading_hours_gantt(
         fig.add_trace(go.Scatter(
             x=[None], y=[None],
             mode='markers',
-            marker=dict(color=colors["lunch"], size=12, symbol='square'),
+            marker=dict(color=colors["lunch"], size=14, symbol='square'),
             name="Lunch Break",
             showlegend=True
         ))
@@ -344,29 +344,17 @@ def create_trading_hours_gantt(
             if overlap_start < overlap_end:
                 overlaps.append((overlap_start, overlap_end))
     
-    for i, (o_start, o_end) in enumerate(overlaps):
-        duration = int((o_end - o_start).total_seconds() / 60)
-        # Draw overlap highlight spanning both markets
+    for o_start, o_end in overlaps:
+        # Soft overlap band: solid fill, no dotted border
         fig.add_shape(
             type="rect",
             x0=o_start, x1=o_end,
             y0=y_market_b - bar_height - 0.05,
             y1=y_market_a + bar_height + 0.05,
             fillcolor=colors["overlap"],
-            line=dict(width=2, color="#ffc107", dash="dot"),
+            line=dict(width=0),
             layer="below"
         )
-        # Add annotation for first overlap only
-        if i == 0:
-            fig.add_annotation(
-                x=o_start + (o_end - o_start) / 2,
-                y=y_market_a + bar_height + 0.15,
-                text=f"Overlap: {duration}m",
-                showarrow=False,
-                font=dict(size=10, color="#856404"),
-                bgcolor="rgba(255, 243, 205, 0.9)",
-                borderpad=3
-            )
     
     # Add cut-off lines
     if not holiday_a and "cutoff_utc" in times_a:
@@ -379,9 +367,9 @@ def create_trading_hours_gantt(
         fig.add_annotation(
             x=times_a["cutoff_utc"],
             y=y_market_a + bar_height + 0.12,
-            text=f"Cut-off",
+            text="Cut-off",
             showarrow=False,
-            font=dict(size=9, color=colors["cutoff"])
+            font=dict(size=10, color=colors["cutoff"])
         )
     
     if not holiday_b and "cutoff_utc" in times_b:
@@ -411,67 +399,78 @@ def create_trading_hours_gantt(
             type="line",
             x0=exec_utc, x1=exec_utc,
             y0=-0.5, y1=1.5,
-            line=dict(color=colors["execution"], width=3)
+            line=dict(color=colors["execution"], width=2)
         )
         fig.add_trace(go.Scatter(
             x=[exec_utc],
             y=[1.6],
-            mode='markers+text',
+            mode="markers+text",
             marker=dict(color=colors["execution"], size=12, symbol="diamond"),
-            text=["⏱️ Execution"],
+            text=["Execution"],
             textposition="top center",
             textfont=dict(size=10, color=colors["execution"]),
-            name="Execution Time",
+            name="Execution",
             showlegend=True,
-            hovertemplate=f"Execution Time<br>{exec_utc.strftime('%H:%M')} UTC<extra></extra>"
+            hovertemplate=f"Execution {exec_utc.strftime('%H:%M')} UTC<extra></extra>"
         ))
     
-    # Build y-axis labels
-    local_hours_a = f"{times_a['open_local'].strftime('%H:%M')}-{times_a['close_local'].strftime('%H:%M')}"
-    local_hours_b = f"{times_b['open_local'].strftime('%H:%M')}-{times_b['close_local'].strftime('%H:%M')}"
-    
-    # Update layout
+    # Show both local and UTC so the chart is self-explanatory
+    local_a = f"{times_a['open_local'].strftime('%H:%M')}–{times_a['close_local'].strftime('%H:%M')}"
+    local_b = f"{times_b['open_local'].strftime('%H:%M')}–{times_b['close_local'].strftime('%H:%M')}"
+    utc_a = f"{times_a['open_utc'].strftime('%H:%M')}–{times_a['close_utc'].strftime('%H:%M')}"
+    utc_b = f"{times_b['open_utc'].strftime('%H:%M')}–{times_b['close_utc'].strftime('%H:%M')}"
+    tickfont = dict(size=12, color="#1f2937")
+    titlefont = dict(size=16, color="#111827")
+
     fig.update_layout(
         title=dict(
-            text=f"<b>Trading Hours Timeline</b><br><sup>{target_date.strftime('%A, %B %d, %Y')} (Times in UTC)</sup>",
+            text=f"When each market is open · {target_date.strftime('%d %b %Y')}",
             x=0.5,
-            xanchor='center',
-            font=dict(size=16)
+            xanchor="center",
+            font=titlefont,
+            subtitle=dict(
+                text="Time axis is UTC. Bars show when each market is open (local hours in UTC).",
+                font=dict(size=11, color="#64748b"),
+            ),
         ),
         xaxis=dict(
-            title="Time (UTC)",
-            type='date',
+            title=dict(text="Time (UTC)", font=dict(size=12, color="#374151")),
+            type="date",
             range=[x_start, x_end],
             tickformat="%H:%M",
-            dtick=7200000,  # 2-hour intervals in milliseconds
+            dtick=7200000,
             showgrid=True,
-            gridcolor='rgba(0,0,0,0.1)',
+            gridcolor="rgba(0,0,0,0.06)",
             zeroline=False,
+            tickfont=tickfont,
         ),
         yaxis=dict(
             tickvals=[y_market_b, y_market_a],
             ticktext=[
-                f"<b>{market_b.name}</b> ({market_b.code})<br><span style='font-size:10px'>{local_hours_b} local</span>",
-                f"<b>{market_a.name}</b> ({market_a.code})<br><span style='font-size:10px'>{local_hours_a} local</span>"
+                f"{market_b.name} ({market_b.code})  {local_b} local  →  {utc_b} UTC",
+                f"{market_a.name} ({market_a.code})  {local_a} local  →  {utc_a} UTC",
             ],
+            tickfont=tickfont,
             showgrid=False,
             range=[-0.6, 1.8],
             zeroline=False,
         ),
-        height=320,
-        margin=dict(l=120, r=40, t=80, b=60),
+        height=420,
+        margin=dict(l=220, r=48, t=88, b=64),
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="center",
             x=0.5,
-            font=dict(size=10),
-            bgcolor="rgba(255,255,255,0.8)"
+            font=dict(size=11, color="#374151"),
+            bgcolor="rgba(255,255,255,0.92)",
+            bordercolor="rgba(0,0,0,0.08)",
+            borderwidth=1,
         ),
-        hovermode='x unified',
-        plot_bgcolor='white',
-        paper_bgcolor='white',
+        hovermode="x unified",
+        plot_bgcolor="#f8fafc",
+        paper_bgcolor="rgba(255,255,255,0.98)",
     )
     
     return fig

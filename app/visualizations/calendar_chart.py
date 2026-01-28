@@ -13,15 +13,15 @@ from app.models import get_market_repository
 from app.data import get_holiday_manager
 
 
-# Color scheme
+# Muted palette (readable on light and dark)
 COLORS = {
-    "common_open": "#28a745",       # Green - both markets open
-    "holiday_a_only": "#fd7e14",    # Orange - Market A holiday only
-    "holiday_b_only": "#17a2b8",    # Teal/Blue - Market B holiday only
-    "common_holiday": "#dc3545",    # Red - both markets closed
-    "weekend": "#e9ecef",           # Light gray - weekend
-    "selected": "#6f42c1",          # Purple - selected date
-    "today": "#ffc107",             # Amber - today
+    "common_open": "#22c55e",       # Muted green
+    "holiday_a_only": "#f97316",    # Muted orange
+    "holiday_b_only": "#14b8a6",    # Muted teal
+    "common_holiday": "#b91c1c",    # Muted red
+    "weekend": "#e4e4e7",           # Neutral gray
+    "selected": "#7c3aed",          # Muted violet
+    "today": "#eab308",             # Muted amber
 }
 
 
@@ -102,27 +102,24 @@ def create_calendar_month_view(
     # Create figure
     fig = go.Figure()
     
-    # Cell dimensions
+    # Cell dimensions (fixed grid; size comes from figure height)
     cell_width = 1
     cell_height = 1
-    padding = 0.05
+    padding = 0.06
     
     # Calculate grid positions
     n_weeks = len(month_days)
     
-    # Add day name headers
+    # Day name headers
+    header_font = dict(size=12, color="#1f2937")
     for col, day_name in enumerate(day_names):
         x = col * cell_width + cell_width / 2
         y = n_weeks * cell_height + 0.5
-        
-        # Weekend headers have different styling
-        color = "#6c757d" if col >= 5 else "#212529"
-        
         fig.add_annotation(
             x=x, y=y,
-            text=f"<b>{day_name}</b>",
+            text=day_name,
             showarrow=False,
-            font=dict(size=12, color=color),
+            font=header_font,
             xanchor="center",
             yanchor="middle"
         )
@@ -148,22 +145,22 @@ def create_calendar_month_view(
             is_selected = selected_date and current_date == selected_date
             is_today = current_date == today
             
-            # Determine cell color and border
+            # Cell color and border (softer selected/today)
             if is_selected:
                 cell_color = COLORS["selected"]
-                border_color = "#4a148c"
-                border_width = 3
+                border_color = "#5b21b6"
+                border_width = 2
                 text_color = "white"
             elif is_today:
                 cell_color = color
                 border_color = COLORS["today"]
-                border_width = 3
-                text_color = "white" if status in ["common_holiday", "holiday_a", "holiday_b"] else "#212529"
+                border_width = 2
+                text_color = "white" if status in ["common_holiday", "holiday_a", "holiday_b"] else "#18181b"
             else:
                 cell_color = color
-                border_color = "white"
+                border_color = "rgba(255,255,255,0.6)"
                 border_width = 1
-                text_color = "white" if status in ["common_holiday", "holiday_a", "holiday_b"] else "#212529"
+                text_color = "white" if status in ["common_holiday", "holiday_a", "holiday_b"] else "#18181b"
             
             # Add cell rectangle
             fig.add_shape(
@@ -177,16 +174,16 @@ def create_calendar_month_view(
                 layer="below"
             )
             
-            # Add day number
+            # Day number (larger for readability)
             fig.add_annotation(
                 x=x + cell_width / 2,
                 y=y + cell_height / 2,
                 text=str(day),
                 showarrow=False,
                 font=dict(
-                    size=14 if is_selected or is_today else 12,
+                    size=15 if is_selected or is_today else 14,
                     color=text_color,
-                    family="Arial Black" if is_selected else "Arial"
+                    family="Arial"
                 ),
                 xanchor="center",
                 yanchor="middle"
@@ -208,44 +205,39 @@ def create_calendar_month_view(
                 showlegend=False
             ))
     
-    # Add legend
+    # Legend with clear labels
     legend_items = [
-        ("Both Open", COLORS["common_open"]),
-        (f"{market_a.name} Holiday", COLORS["holiday_a_only"]),
-        (f"{market_b.name} Holiday", COLORS["holiday_b_only"]),
-        ("Both Closed", COLORS["common_holiday"]),
+        ("Both open", COLORS["common_open"]),
+        (f"{market_a.name} closed", COLORS["holiday_a_only"]),
+        (f"{market_b.name} closed", COLORS["holiday_b_only"]),
+        ("Both closed", COLORS["common_holiday"]),
         ("Weekend", COLORS["weekend"]),
     ]
-    
     if selected_date:
         legend_items.append(("Selected", COLORS["selected"]))
-    
-    for i, (name, color) in enumerate(legend_items):
+    for name, color in legend_items:
         fig.add_trace(go.Scatter(
             x=[None], y=[None],
-            mode='markers',
-            marker=dict(size=12, color=color, symbol='square'),
+            mode="markers",
+            marker=dict(size=12, color=color, symbol="square"),
             name=name,
-            showlegend=True
+            showlegend=True,
         ))
-    
-    # Month/Year title
+
     month_name = calendar.month_name[month]
-    
-    # Update layout
     fig.update_layout(
         title=dict(
-            text=f"<b>{month_name} {year}</b><br><sup>{market_a.code} vs {market_b.code} Trading Calendar</sup>",
+            text=f"{month_name} {year} · {market_a.code} vs {market_b.code}",
             x=0.5,
             xanchor="center",
-            font=dict(size=16)
+            font=dict(size=16, color="#111827")
         ),
         xaxis=dict(
             showgrid=False,
             zeroline=False,
             showticklabels=False,
             range=[-0.2, 7.2],
-            fixedrange=True
+            fixedrange=True,
         ),
         yaxis=dict(
             showgrid=False,
@@ -254,21 +246,24 @@ def create_calendar_month_view(
             range=[-0.5, n_weeks + 1],
             scaleanchor="x",
             scaleratio=1,
-            fixedrange=True
+            fixedrange=True,
         ),
-        height=350,
-        margin=dict(l=20, r=20, t=80, b=20),
+        height=460,
+        margin=dict(l=24, r=24, t=56, b=56),
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.15,
+            y=-0.1,
             xanchor="center",
             x=0.5,
-            font=dict(size=10)
+            font=dict(size=11, color="#374151"),
+            bgcolor="rgba(255,255,255,0.92)",
+            bordercolor="rgba(0,0,0,0.08)",
+            borderwidth=1,
         ),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        hovermode='closest'
+        plot_bgcolor="#f8fafc",
+        paper_bgcolor="rgba(255,255,255,0.98)",
+        hovermode="closest",
     )
     
     return fig

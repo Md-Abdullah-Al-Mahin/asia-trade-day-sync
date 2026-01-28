@@ -44,6 +44,7 @@ def render_timeline_chart(
             execution_time=exec_datetime
         )
         st.plotly_chart(fig, use_container_width=True)
+        st.caption("Each row = one market. Horizontal axis = UTC. Row label shows local hours and their UTC range. Where bars overlap, both markets are open.")
 
         calendar_service = get_calendar_service()
         overlaps = calendar_service.get_trading_overlap_for_date(source_code, target_code, trade_date)
