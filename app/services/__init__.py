@@ -15,7 +15,12 @@ from app.services.calendar_service import (
     SettlementDateResult,
     get_calendar_service,
 )
-from app.services.settlement_engine import SettlementEngine
+from app.services.settlement_engine import (
+    SettlementEngine,
+    ValidationResult,
+    CutOffCheck,
+    get_settlement_engine,
+)
 
 __all__ = [
     # Timezone service
@@ -31,4 +36,7 @@ __all__ = [
     "get_calendar_service",
     # Settlement engine
     "SettlementEngine",
+    "ValidationResult",
+    "CutOffCheck",
+    "get_settlement_engine",
 ]
