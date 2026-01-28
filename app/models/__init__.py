@@ -10,7 +10,15 @@ from app.models.market import (
     get_market_repository,
     get_market,
 )
-from app.models.holiday import Holiday, HolidayType
+from app.models.holiday import (
+    Holiday,
+    HolidayType,
+    HolidaySource,
+    HolidayCalendar,
+    get_holiday_calendar,
+    get_common_trading_days,
+    get_common_holidays,
+)
 from app.models.settlement import (
     SettlementCheckRequest,
     SettlementResult,
@@ -30,6 +38,11 @@ __all__ = [
     # Holiday models
     "Holiday",
     "HolidayType",
+    "HolidaySource",
+    "HolidayCalendar",
+    "get_holiday_calendar",
+    "get_common_trading_days",
+    "get_common_holidays",
     # Settlement models
     "SettlementCheckRequest",
     "SettlementResult",

@@ -54,8 +54,8 @@
     {
       "code": "IN",
       "name": "India",
-      "exchange_name": "National Stock Exchange of India",
-      "exchange_calendar_code": "XNSE",
+      "exchange_name": "Bombay Stock Exchange",
+      "exchange_calendar_code": "XBOM",
       "timezone": "Asia/Kolkata",
       "trading_hours": {
         "open": "09:15",

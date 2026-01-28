@@ -37,7 +37,7 @@ EXCHANGE_CALENDAR_CODES = {
     "JP": "XTKS",   # Tokyo Stock Exchange
     "HK": "XHKG",   # Hong Kong Stock Exchange
     "SG": "XSES",   # Singapore Exchange
-    "IN": "XNSE",   # National Stock Exchange of India
+    "IN": "XBOM",   # Bombay Stock Exchange (BSE India)
     "AU": "XASX",   # Australian Securities Exchange
     "KR": "XKRX",   # Korea Exchange
     "TW": "XTAI",   # Taiwan Stock Exchange
