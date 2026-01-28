@@ -1,133 +1,282 @@
 {
+  "version": "1.0.0",
+  "last_updated": "2026-01-28",
+  "description": "Asian market configurations for the T+1 Settlement Dashboard",
   "markets": [
     {
       "code": "JP",
       "name": "Japan",
       "exchange_name": "Tokyo Stock Exchange",
+      "exchange_code": "TSE",
       "exchange_calendar_code": "XTKS",
       "timezone": "Asia/Tokyo",
+      "utc_offset": "+09:00",
       "trading_hours": {
         "open": "09:00",
         "close": "15:00",
         "lunch_break": {
           "start": "11:30",
           "end": "12:30"
-        }
+        },
+        "pre_market": null,
+        "after_hours": null
       },
       "settlement_cycle": 1,
       "currency": "JPY",
-      "depository_cut_off": "14:00"
+      "depository": {
+        "name": "Japan Securities Depository Center (JASDEC)",
+        "cut_off_time": "14:00",
+        "notes": "Settlement instruction deadline"
+      },
+      "special_notes": [
+        "Market has lunch break from 11:30-12:30",
+        "Golden Week (late April/early May) affects multiple days",
+        "Obon holiday in mid-August"
+      ],
+      "website": "https://www.jpx.co.jp/english/"
     },
     {
       "code": "HK",
       "name": "Hong Kong",
       "exchange_name": "Hong Kong Stock Exchange",
+      "exchange_code": "HKEX",
       "exchange_calendar_code": "XHKG",
       "timezone": "Asia/Hong_Kong",
+      "utc_offset": "+08:00",
       "trading_hours": {
         "open": "09:30",
         "close": "16:00",
         "lunch_break": {
           "start": "12:00",
           "end": "13:00"
-        }
+        },
+        "pre_market": {
+          "start": "09:00",
+          "end": "09:30"
+        },
+        "after_hours": null
       },
       "settlement_cycle": 1,
       "currency": "HKD",
-      "depository_cut_off": "15:45"
+      "depository": {
+        "name": "Central Clearing and Settlement System (CCASS)",
+        "cut_off_time": "15:45",
+        "notes": "CCASS settlement instruction deadline"
+      },
+      "special_notes": [
+        "Market has lunch break from 12:00-13:00",
+        "Typhoon Signal 8+ causes market closure",
+        "Black Rainstorm Warning may cause closure",
+        "Lunar New Year typically 3 days closure"
+      ],
+      "website": "https://www.hkex.com.hk/"
     },
     {
       "code": "SG",
       "name": "Singapore",
       "exchange_name": "Singapore Exchange",
+      "exchange_code": "SGX",
       "exchange_calendar_code": "XSES",
       "timezone": "Asia/Singapore",
+      "utc_offset": "+08:00",
       "trading_hours": {
         "open": "09:00",
         "close": "17:00",
-        "lunch_break": null
+        "lunch_break": null,
+        "pre_market": {
+          "start": "08:30",
+          "end": "09:00"
+        },
+        "after_hours": null
       },
       "settlement_cycle": 1,
       "currency": "SGD",
-      "depository_cut_off": "16:00"
+      "depository": {
+        "name": "Central Depository (CDP)",
+        "cut_off_time": "16:00",
+        "notes": "CDP settlement deadline"
+      },
+      "special_notes": [
+        "Continuous trading - no lunch break",
+        "Longest trading hours in Asia (8 hours)"
+      ],
+      "website": "https://www.sgx.com/"
     },
     {
       "code": "IN",
       "name": "India",
-      "exchange_name": "Bombay Stock Exchange",
+      "exchange_name": "Bombay Stock Exchange / National Stock Exchange",
+      "exchange_code": "BSE/NSE",
       "exchange_calendar_code": "XBOM",
       "timezone": "Asia/Kolkata",
+      "utc_offset": "+05:30",
       "trading_hours": {
         "open": "09:15",
         "close": "15:30",
-        "lunch_break": null
+        "lunch_break": null,
+        "pre_market": {
+          "start": "09:00",
+          "end": "09:15"
+        },
+        "after_hours": {
+          "start": "15:40",
+          "end": "16:00"
+        }
       },
       "settlement_cycle": 1,
       "currency": "INR",
-      "depository_cut_off": "13:30"
+      "depository": {
+        "name": "National Securities Depository Limited (NSDL) / Central Depository Services Limited (CDSL)",
+        "cut_off_time": "13:30",
+        "notes": "Early cut-off for settlement instructions"
+      },
+      "special_notes": [
+        "Continuous trading - no lunch break",
+        "Many regional holidays (Diwali, Holi, etc.)",
+        "Half-day trading on special occasions"
+      ],
+      "website": "https://www.bseindia.com/"
     },
     {
       "code": "AU",
       "name": "Australia",
       "exchange_name": "Australian Securities Exchange",
+      "exchange_code": "ASX",
       "exchange_calendar_code": "XASX",
       "timezone": "Australia/Sydney",
+      "utc_offset": "+11:00",
       "trading_hours": {
         "open": "10:00",
         "close": "16:00",
-        "lunch_break": null
+        "lunch_break": null,
+        "pre_market": {
+          "start": "07:00",
+          "end": "10:00"
+        },
+        "after_hours": null
       },
       "settlement_cycle": 1,
       "currency": "AUD",
-      "depository_cut_off": "11:30"
+      "depository": {
+        "name": "ASX Settlement (CHESS)",
+        "cut_off_time": "11:30",
+        "notes": "Early settlement cut-off time"
+      },
+      "special_notes": [
+        "Daylight saving time affects UTC offset (AEST/AEDT)",
+        "UTC+10 in winter, UTC+11 in summer",
+        "Continuous trading - no lunch break"
+      ],
+      "website": "https://www.asx.com.au/"
     },
     {
       "code": "KR",
       "name": "South Korea",
       "exchange_name": "Korea Exchange",
+      "exchange_code": "KRX",
       "exchange_calendar_code": "XKRX",
       "timezone": "Asia/Seoul",
+      "utc_offset": "+09:00",
       "trading_hours": {
         "open": "09:00",
         "close": "15:30",
-        "lunch_break": null
+        "lunch_break": null,
+        "pre_market": {
+          "start": "08:00",
+          "end": "09:00"
+        },
+        "after_hours": {
+          "start": "15:40",
+          "end": "18:00"
+        }
       },
       "settlement_cycle": 1,
       "currency": "KRW",
-      "depository_cut_off": "16:00"
+      "depository": {
+        "name": "Korea Securities Depository (KSD)",
+        "cut_off_time": "16:00",
+        "notes": "KSD settlement instruction deadline"
+      },
+      "special_notes": [
+        "Continuous trading - no lunch break",
+        "Chuseok (Korean Thanksgiving) multi-day closure",
+        "Lunar New Year multi-day closure"
+      ],
+      "website": "https://global.krx.co.kr/"
     },
     {
       "code": "TW",
       "name": "Taiwan",
       "exchange_name": "Taiwan Stock Exchange",
+      "exchange_code": "TWSE",
       "exchange_calendar_code": "XTAI",
       "timezone": "Asia/Taipei",
+      "utc_offset": "+08:00",
       "trading_hours": {
         "open": "09:00",
         "close": "13:30",
-        "lunch_break": null
+        "lunch_break": null,
+        "pre_market": null,
+        "after_hours": {
+          "start": "14:00",
+          "end": "14:30"
+        }
       },
       "settlement_cycle": 1,
       "currency": "TWD",
-      "depository_cut_off": "14:00"
+      "depository": {
+        "name": "Taiwan Depository & Clearing Corporation (TDCC)",
+        "cut_off_time": "14:00",
+        "notes": "TDCC settlement deadline"
+      },
+      "special_notes": [
+        "Shortest regular trading hours (4.5 hours)",
+        "Continuous trading - no lunch break",
+        "Typhoon warnings cause market closure",
+        "Lunar New Year typically longest closure"
+      ],
+      "website": "https://www.twse.com.tw/en/"
     },
     {
       "code": "CN",
       "name": "China",
-      "exchange_name": "Shanghai Stock Exchange",
+      "exchange_name": "Shanghai Stock Exchange / Shenzhen Stock Exchange",
+      "exchange_code": "SSE/SZSE",
       "exchange_calendar_code": "XSHG",
       "timezone": "Asia/Shanghai",
+      "utc_offset": "+08:00",
       "trading_hours": {
         "open": "09:30",
         "close": "15:00",
         "lunch_break": {
           "start": "11:30",
           "end": "13:00"
-        }
+        },
+        "pre_market": {
+          "start": "09:15",
+          "end": "09:25"
+        },
+        "after_hours": null
       },
       "settlement_cycle": 1,
       "currency": "CNY",
-      "depository_cut_off": "15:30"
+      "depository": {
+        "name": "China Securities Depository and Clearing Corporation (CSDC)",
+        "cut_off_time": "15:30",
+        "notes": "A-shares settlement"
+      },
+      "special_notes": [
+        "Market has 1.5 hour lunch break (11:30-13:00)",
+        "Golden Week (Oct 1-7) full closure",
+        "Lunar New Year (Chinese New Year) longest holiday",
+        "Stock Connect with HK has separate rules"
+      ],
+      "website": "http://www.sse.com.cn/English/"
     }
-  ]
+  ],
+  "metadata": {
+    "supported_instrument_types": ["equity", "etf", "bond"],
+    "default_settlement_cycle": 1,
+    "timezone_info": "All times are in local market timezone unless specified"
+  }
 }
