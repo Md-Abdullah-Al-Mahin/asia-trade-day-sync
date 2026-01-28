@@ -21,6 +21,14 @@ from app.services.settlement_engine import (
     CutOffCheck,
     get_settlement_engine,
 )
+from app.services.market_status_service import (
+    MarketStatusService,
+    TradingSession,
+    TradingHoursInfo,
+    TimeUntilInfo,
+    AllMarketsStatus,
+    get_market_status_service,
+)
 
 __all__ = [
     # Timezone service
@@ -39,4 +47,11 @@ __all__ = [
     "ValidationResult",
     "CutOffCheck",
     "get_settlement_engine",
+    # Market status service
+    "MarketStatusService",
+    "TradingSession",
+    "TradingHoursInfo",
+    "TimeUntilInfo",
+    "AllMarketsStatus",
+    "get_market_status_service",
 ]
