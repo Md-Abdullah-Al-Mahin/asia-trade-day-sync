@@ -27,7 +27,12 @@ from app.data import (
     get_special_cases_manager,
 )
 from app.config import INSTRUMENT_TYPES
-from app.visualizations import create_market_timeline, create_trading_hours_gantt
+from app.visualizations import (
+    create_market_timeline, 
+    create_trading_hours_gantt,
+    create_calendar_month_view,
+    get_month_summary,
+)
 
 
 # Page configuration
@@ -786,34 +791,150 @@ def render_timeline_chart(
             st.info("Unable to calculate overlap information")
 
 
-def render_calendar_placeholder(source_code: str, target_code: str, trade_date: date):
-    """Render placeholder for the calendar view."""
+def render_calendar_view(source_code: str, target_code: str, trade_date: date):
+    """
+    Render the calendar month view visualization.
+    
+    Color-coded calendar showing:
+    - Common business days (green)
+    - Holidays in Market A only (orange)
+    - Holidays in Market B only (blue)
+    - Common holidays (red)
+    - Selected trade date (highlighted)
+    """
     st.markdown("### 📅 Calendar View")
-    st.info("🗓️ Interactive calendar visualization will be implemented in Step 5.4")
     
-    # Show upcoming holidays
-    holiday_manager = get_holiday_manager()
-    calendar_service = get_calendar_service()
+    repo = get_market_repository()
+    source_market = repo.get(source_code)
+    target_market = repo.get(target_code)
     
-    col1, col2 = st.columns(2)
+    # Month navigation
+    col_nav1, col_nav2, col_nav3 = st.columns([1, 2, 1])
     
-    with col1:
-        st.markdown(f"**{source_code} - Upcoming Holidays:**")
-        holidays = holiday_manager.get_upcoming_holidays(source_code, days_ahead=30)
-        if holidays:
+    with col_nav1:
+        # Previous month button
+        prev_month = trade_date.month - 1 if trade_date.month > 1 else 12
+        prev_year = trade_date.year if trade_date.month > 1 else trade_date.year - 1
+        if st.button("◀ Prev", key="prev_month", use_container_width=True):
+            st.session_state.calendar_month = prev_month
+            st.session_state.calendar_year = prev_year
+    
+    with col_nav2:
+        # Current month display
+        display_month = getattr(st.session_state, 'calendar_month', trade_date.month)
+        display_year = getattr(st.session_state, 'calendar_year', trade_date.year)
+        
+        import calendar as cal_module
+        month_name = cal_module.month_name[display_month]
+        st.markdown(f"<h4 style='text-align: center; margin: 0;'>{month_name} {display_year}</h4>", 
+                   unsafe_allow_html=True)
+    
+    with col_nav3:
+        # Next month button
+        next_month = trade_date.month + 1 if trade_date.month < 12 else 1
+        next_year = trade_date.year if trade_date.month < 12 else trade_date.year + 1
+        if st.button("Next ▶", key="next_month", use_container_width=True):
+            st.session_state.calendar_month = next_month
+            st.session_state.calendar_year = next_year
+    
+    # Get display month/year (use session state if set, otherwise use trade_date)
+    display_month = getattr(st.session_state, 'calendar_month', trade_date.month)
+    display_year = getattr(st.session_state, 'calendar_year', trade_date.year)
+    
+    try:
+        # Create the calendar chart
+        fig = create_calendar_month_view(
+            market_a_code=source_code,
+            market_b_code=target_code,
+            year=display_year,
+            month=display_month,
+            selected_date=trade_date
+        )
+        
+        # Display the chart
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Month summary statistics
+        summary = get_month_summary(source_code, target_code, display_year, display_month)
+        
+        st.markdown("#### 📊 Month Summary")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric(
+                label="✅ Both Open",
+                value=f"{summary['common_open']} days",
+                help="Days when both markets are open for trading"
+            )
+        
+        with col2:
+            st.metric(
+                label=f"🟠 {source_market.name} Only",
+                value=f"{summary['holiday_a_only']} days",
+                help=f"Days when only {source_market.name} is closed"
+            )
+        
+        with col3:
+            st.metric(
+                label=f"🔵 {target_market.name} Only",
+                value=f"{summary['holiday_b_only']} days",
+                help=f"Days when only {target_market.name} is closed"
+            )
+        
+        with col4:
+            st.metric(
+                label="🔴 Both Closed",
+                value=f"{summary['common_holiday']} days",
+                help="Days when both markets are closed (holidays)"
+            )
+        
+        # Upcoming holidays section
+        with st.expander("📋 Upcoming Holidays"):
+            holiday_manager = get_holiday_manager()
+            
+            col_h1, col_h2 = st.columns(2)
+            
+            with col_h1:
+                st.markdown(f"**{source_market.name} ({source_code})**")
+                holidays = holiday_manager.get_upcoming_holidays(source_code, days_ahead=60)
+                if holidays:
+                    for h in holidays[:8]:
+                        day_name = h.date.strftime('%a')
+                        st.markdown(f"- **{h.date.strftime('%b %d')}** ({day_name}): {h.name}")
+                else:
+                    st.markdown("_No holidays in next 60 days_")
+            
+            with col_h2:
+                st.markdown(f"**{target_market.name} ({target_code})**")
+                holidays = holiday_manager.get_upcoming_holidays(target_code, days_ahead=60)
+                if holidays:
+                    for h in holidays[:8]:
+                        day_name = h.date.strftime('%a')
+                        st.markdown(f"- **{h.date.strftime('%b %d')}** ({day_name}): {h.name}")
+                else:
+                    st.markdown("_No holidays in next 60 days_")
+    
+    except Exception as e:
+        st.error(f"Could not render calendar: {e}")
+        
+        # Fallback to simple holiday list
+        st.markdown("**Fallback - Upcoming Holidays:**")
+        holiday_manager = get_holiday_manager()
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown(f"**{source_code}:**")
+            holidays = holiday_manager.get_upcoming_holidays(source_code, days_ahead=30)
             for h in holidays[:5]:
                 st.markdown(f"- {h.date.strftime('%b %d')}: {h.name}")
-        else:
-            st.markdown("No holidays in next 30 days")
-    
-    with col2:
-        st.markdown(f"**{target_code} - Upcoming Holidays:**")
-        holidays = holiday_manager.get_upcoming_holidays(target_code, days_ahead=30)
-        if holidays:
+        
+        with col2:
+            st.markdown(f"**{target_code}:**")
+            holidays = holiday_manager.get_upcoming_holidays(target_code, days_ahead=30)
             for h in holidays[:5]:
                 st.markdown(f"- {h.date.strftime('%b %d')}: {h.name}")
-        else:
-            st.markdown("No holidays in next 30 days")
 
 
 def perform_settlement_check(source_code: str, target_code: str, trade_date: date, 
@@ -881,8 +1002,8 @@ def main():
     
     st.markdown("---")
     
-    # Row 3: Calendar
-    render_calendar_placeholder(source_code, target_code, trade_date)
+    # Row 3: Calendar (Month View)
+    render_calendar_view(source_code, target_code, trade_date)
     
     # Footer
     st.markdown("---")
