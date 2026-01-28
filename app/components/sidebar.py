@@ -24,196 +24,95 @@ def render_sidebar() -> Tuple[Optional[str], Optional[str], date, time, str]:
     market_list = list(market_options.keys())
 
     with st.sidebar:
-        st.header("🎛️ Trade Parameters")
-        st.markdown("---")
+        st.header("Trade Parameters")
+        st.divider()
 
-        # Market Selection Section
         st.subheader("Markets")
-
         source_market = st.selectbox(
-            "📤 Source Market (Sell)",
+            "Source (Sell)",
             options=market_list,
             index=0,
-            help="Market where the security is being sold"
+            help="Market where the security is being sold",
         )
-
         target_market = st.selectbox(
-            "📥 Target Market (Buy)",
+            "Target (Buy)",
             options=market_list,
             index=1 if len(market_list) > 1 else 0,
-            help="Market where the security is being purchased"
+            help="Market where the security is being purchased",
         )
-
         if source_market == target_market:
-            st.warning("⚠️ Same market selected for both sides")
+            st.warning("Same market selected for both sides")
 
-        st.markdown("---")
-
-        # Date & Time Section
+        st.divider()
         st.subheader("Trade Timing")
-
         trade_date = st.date_input(
-            "📅 Trade Date",
+            "Trade Date",
             value=date.today(),
             min_value=date.today() - timedelta(days=30),
             max_value=date.today() + timedelta(days=365),
-            help="Date of the trade execution"
         )
 
-        # Execution Time - Option to use slider or selectbox
         time_input_mode = st.radio(
-            "Time Input Mode",
+            "Time input",
             options=["Slider", "Dropdown"],
             index=0,
             horizontal=True,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
         )
-
         if time_input_mode == "Slider":
             time_minutes = st.slider(
-                "⏰ Execution Time",
+                "Execution time",
                 min_value=0,
                 max_value=23 * 60 + 59,
                 value=10 * 60,
                 step=15,
                 format="%d min",
-                help="Drag to select execution time"
             )
             exec_hour = time_minutes // 60
             exec_minute = time_minutes % 60
             execution_time = time(exec_hour, exec_minute)
-
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 10px 15px;
-                border-radius: 8px;
-                text-align: center;
-                font-size: 1.2em;
-                margin: 5px 0;
-            ">
-                ⏰ <strong>{execution_time.strftime('%H:%M')}</strong>
-            </div>
-            """, unsafe_allow_html=True)
         else:
-            col1, col2 = st.columns(2)
-            with col1:
-                exec_hour = st.selectbox(
-                    "Hour",
-                    options=list(range(0, 24)),
-                    index=10,
-                    format_func=lambda x: f"{x:02d}"
-                )
-            with col2:
-                exec_minute = st.selectbox(
-                    "Minute",
-                    options=[0, 15, 30, 45],
-                    index=0,
-                    format_func=lambda x: f"{x:02d}"
-                )
+            c1, c2 = st.columns(2)
+            with c1:
+                exec_hour = st.selectbox("Hour", range(24), index=10, format_func=lambda x: f"{x:02d}")
+            with c2:
+                exec_minute = st.selectbox("Minute", [0, 15, 30, 45], index=0, format_func=lambda x: f"{x:02d}")
             execution_time = time(exec_hour, exec_minute)
-            st.caption(f"⏰ Execution Time: {execution_time.strftime('%H:%M')}")
+        st.caption(f"Execution: {execution_time.strftime('%H:%M')}")
 
-        st.markdown("---")
-
-        # Instrument Type
+        st.divider()
         st.subheader("Instrument")
-        instrument_type = st.selectbox(
-            "📈 Instrument Type",
-            options=INSTRUMENT_TYPES,
-            index=0,
-            help="Type of security being traded"
-        )
+        instrument_type = st.selectbox("Type", options=INSTRUMENT_TYPES, index=0, label_visibility="collapsed")
 
-        st.markdown("---")
+        st.divider()
+        with st.expander("Advanced"):
+            st.checkbox("Consider pre-market", value=False)
+            st.checkbox("Consider after-hours", value=False)
+            st.number_input("Settlement override (days)", min_value=1, max_value=5, value=2)
 
-        # Advanced Options (collapsible)
-        with st.expander("⚙️ Advanced Options"):
-            st.checkbox(
-                "Consider pre-market hours",
-                value=False,
-                help="Include pre-market session in analysis"
-            )
-            st.checkbox(
-                "Consider after-hours",
-                value=False,
-                help="Include after-hours session in analysis"
-            )
-            st.number_input(
-                "Settlement cycle override (days)",
-                min_value=1,
-                max_value=5,
-                value=2,
-                help="Override default T+N settlement cycle"
-            )
-
-        st.markdown("---")
-
-        # Check Settlement Button
-        check_clicked = st.button(
-            "🔍 Check Settlement",
-            type="primary",
-            use_container_width=True,
-            help="Analyze settlement feasibility"
-        )
-
+        st.divider()
+        check_clicked = st.button("Check Settlement", type="primary", use_container_width=True)
         if check_clicked:
             st.session_state.last_check_time = datetime.now()
             st.session_state.trigger_check = True
-
         if st.session_state.last_check_time:
-            st.caption(f"Last checked: {st.session_state.last_check_time.strftime('%H:%M:%S')}")
+            st.caption(f"Last check: {st.session_state.last_check_time.strftime('%H:%M:%S')}")
 
-        st.markdown("---")
-
-        # Quick Info Section with Current Time Indicators
-        st.subheader("ℹ️ Quick Info")
-        market_status_service = get_market_status_service()
-        tz_service = get_timezone_service()
+        st.divider()
+        st.subheader("Quick Info")
         source_code = market_options[source_market]
         target_code = market_options[target_market]
-
         try:
             repo = get_market_repository()
-            source_market_data = repo.get(source_code)
-            target_market_data = repo.get(target_code)
-
-            st.markdown("**🕐 Current Local Times:**")
+            tz_service = get_timezone_service()
+            ms = get_market_status_service()
             now_utc = datetime.utcnow()
-            source_local = tz_service.convert_from_utc(now_utc, source_market_data.timezone)
-            target_local = tz_service.convert_from_utc(now_utc, target_market_data.timezone)
-
-            st.markdown(f"""
-            <div style="font-family: monospace; font-size: 0.9em; margin: 5px 0;">
-                🇯🇵 <strong>{source_code}</strong>: {source_local.strftime('%H:%M:%S')} ({source_market_data.timezone.split('/')[-1]})<br>
-                🇭🇰 <strong>{target_code}</strong>: {target_local.strftime('%H:%M:%S')} ({target_market_data.timezone.split('/')[-1]})
-            </div>
-            """, unsafe_allow_html=True)
-
-            st.markdown("---")
-            st.markdown("**📊 Market Status:**")
-            source_status = market_status_service.get_market_status(source_code)
-            target_status = market_status_service.get_market_status(target_code)
-
-            source_emoji = "🟢" if source_status.is_open else "🔴"
-            source_session = source_status.session if hasattr(source_status, 'session') else "Unknown"
-            st.markdown(f"**{source_code}**: {source_emoji} {source_session}")
-
-            target_emoji = "🟢" if target_status.is_open else "🔴"
-            target_session = target_status.session if hasattr(target_status, 'session') else "Unknown"
-            st.markdown(f"**{target_code}**: {target_emoji} {target_session}")
-
-            if hasattr(source_status, 'next_change') and source_status.next_change:
-                time_to_change = source_status.next_change - now_utc
-                if time_to_change.total_seconds() > 0:
-                    hours, remainder = divmod(int(time_to_change.total_seconds()), 3600)
-                    minutes = remainder // 60
-                    if hours > 0:
-                        st.caption(f"⏳ {source_code} changes in {hours}h {minutes}m")
-                    else:
-                        st.caption(f"⏳ {source_code} changes in {minutes}m")
-
+            src = repo.get(source_code)
+            tgt = repo.get(target_code)
+            st.caption(f"{source_code}: {tz_service.convert_from_utc(now_utc, src.timezone).strftime('%H:%M')}")
+            st.caption(f"{target_code}: {tz_service.convert_from_utc(now_utc, tgt.timezone).strftime('%H:%M')}")
+            ss, ts = ms.get_market_status(source_code), ms.get_market_status(target_code)
+            st.caption(f"Status: {source_code} {'Open' if ss.is_open else 'Closed'} · {target_code} {'Open' if ts.is_open else 'Closed'}")
         except Exception:
             st.caption("Market status unavailable")
 
@@ -222,5 +121,5 @@ def render_sidebar() -> Tuple[Optional[str], Optional[str], date, time, str]:
         market_options[target_market],
         trade_date,
         execution_time,
-        instrument_type
+        instrument_type,
     )

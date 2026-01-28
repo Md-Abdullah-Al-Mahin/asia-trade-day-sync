@@ -20,28 +20,15 @@ def render_timeline_chart(
     """
     Render the Gantt chart timeline visualization.
     """
-    st.markdown("### 📊 Market Timeline")
-
+    st.subheader("Market Timeline")
     col_opt1, col_opt2 = st.columns([3, 1])
     is_today = trade_date == date.today()
     show_current_time = False
-
     with col_opt1:
         if is_today:
-            show_current_time = st.checkbox(
-                "🕐 Show current time marker",
-                value=True,
-                help="Display a marker showing the current time on the timeline"
-            )
-
+            show_current_time = st.checkbox("Show current time on chart", value=True)
     with col_opt2:
-        st.selectbox(
-            "Timezone",
-            options=["UTC", "Local"],
-            index=0,
-            help="Display times in UTC or local market time",
-            label_visibility="collapsed"
-        )
+        st.selectbox("Timezone", options=["UTC", "Local"], index=0, label_visibility="collapsed")
 
     exec_datetime = None
     if execution_time:
@@ -65,17 +52,16 @@ def render_timeline_chart(
             total_mins = sum(w.duration_minutes for w in overlaps)
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric(label="🔄 Overlap Windows", value=len(overlaps), help="Number of overlapping trading periods")
+                st.metric("Overlap windows", len(overlaps), None)
             with col2:
-                st.metric(label="⏱️ Total Overlap", value=f"{total_mins} min", help="Total minutes of overlapping trading hours")
+                st.metric("Total overlap", f"{total_mins} min", None)
             with col3:
                 repo = get_market_repository()
-                source_market = repo.get(source_code)
-                target_market = repo.get(target_code)
-                latest_close = max(source_market.trading_hours.close, target_market.trading_hours.close)
-                st.metric(label="🏁 Latest Close", value=latest_close.strftime("%H:%M"), help="Latest market close time (local)")
+                sm, tm = repo.get(source_code), repo.get(target_code)
+                latest = max(sm.trading_hours.close, tm.trading_hours.close)
+                st.metric("Latest close", latest.strftime("%H:%M"), None)
 
-            with st.expander("📋 Overlap Window Details"):
+            with st.expander("Overlap details"):
                 for i, window in enumerate(overlaps, 1):
                     st.markdown(f"""
                     **Window {i}**
@@ -83,14 +69,7 @@ def render_timeline_chart(
                     - Duration: {window.duration_minutes} minutes
                     """)
         else:
-            st.warning("⚠️ No trading hour overlap found between these markets on this date")
-            st.markdown("""
-            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 10px;">
-                <strong>Why no overlap?</strong><br>
-                The selected markets may have non-overlapping trading hours, or one/both markets
-                may be closed (holiday/weekend) on this date.
-            </div>
-            """, unsafe_allow_html=True)
+            st.warning("No trading hour overlap on this date.")
 
     except Exception as e:
         st.error(f"Could not render timeline: {e}")
