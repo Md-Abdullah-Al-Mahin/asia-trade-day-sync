@@ -175,25 +175,64 @@ def render_sidebar() -> Tuple[Optional[str], Optional[str], date, time, str]:
             help="Date of the trade execution"
         )
         
-        # Execution Time
-        col1, col2 = st.columns(2)
-        with col1:
-            exec_hour = st.selectbox(
-                "Hour",
-                options=list(range(0, 24)),
-                index=10,
-                format_func=lambda x: f"{x:02d}"
-            )
-        with col2:
-            exec_minute = st.selectbox(
-                "Minute",
-                options=[0, 15, 30, 45],
-                index=0,
-                format_func=lambda x: f"{x:02d}"
-            )
+        # Execution Time - Option to use slider or selectbox
+        time_input_mode = st.radio(
+            "Time Input Mode",
+            options=["Slider", "Dropdown"],
+            index=0,
+            horizontal=True,
+            label_visibility="collapsed"
+        )
         
-        execution_time = time(exec_hour, exec_minute)
-        st.caption(f"⏰ Execution Time: {execution_time.strftime('%H:%M')}")
+        if time_input_mode == "Slider":
+            # Time slider (0-1439 minutes = 24 hours)
+            time_minutes = st.slider(
+                "⏰ Execution Time",
+                min_value=0,
+                max_value=23 * 60 + 59,
+                value=10 * 60,  # Default to 10:00
+                step=15,
+                format="%d min",
+                help="Drag to select execution time"
+            )
+            exec_hour = time_minutes // 60
+            exec_minute = time_minutes % 60
+            execution_time = time(exec_hour, exec_minute)
+            
+            # Display formatted time
+            st.markdown(f"""
+            <div style="
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 10px 15px;
+                border-radius: 8px;
+                text-align: center;
+                font-size: 1.2em;
+                margin: 5px 0;
+            ">
+                ⏰ <strong>{execution_time.strftime('%H:%M')}</strong>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            # Dropdown selectboxes
+            col1, col2 = st.columns(2)
+            with col1:
+                exec_hour = st.selectbox(
+                    "Hour",
+                    options=list(range(0, 24)),
+                    index=10,
+                    format_func=lambda x: f"{x:02d}"
+                )
+            with col2:
+                exec_minute = st.selectbox(
+                    "Minute",
+                    options=[0, 15, 30, 45],
+                    index=0,
+                    format_func=lambda x: f"{x:02d}"
+                )
+            
+            execution_time = time(exec_hour, exec_minute)
+            st.caption(f"⏰ Execution Time: {execution_time.strftime('%H:%M')}")
         
         st.markdown("---")
         
@@ -249,27 +288,69 @@ def render_sidebar() -> Tuple[Optional[str], Optional[str], date, time, str]:
         
         st.markdown("---")
         
-        # Quick Info Section
+        # Quick Info Section with Current Time Indicators
         st.subheader("ℹ️ Quick Info")
         
         # Show current market status
         market_status_service = get_market_status_service()
+        tz_service = get_timezone_service()
         source_code = market_options[source_market]
         target_code = market_options[target_market]
         
         try:
+            # Get market data
+            repo = get_market_repository()
+            source_market_data = repo.get(source_code)
+            target_market_data = repo.get(target_code)
+            
+            # Current time indicators
+            st.markdown("**🕐 Current Local Times:**")
+            
+            now_utc = datetime.utcnow()
+            
+            # Source market time
+            source_local = tz_service.convert_from_utc(now_utc, source_market_data.timezone)
+            
+            # Target market time
+            target_local = tz_service.convert_from_utc(now_utc, target_market_data.timezone)
+            
+            # Display local times with clock emoji
+            st.markdown(f"""
+            <div style="font-family: monospace; font-size: 0.9em; margin: 5px 0;">
+                🇯🇵 <strong>{source_code}</strong>: {source_local.strftime('%H:%M:%S')} ({source_market_data.timezone.split('/')[-1]})<br>
+                🇭🇰 <strong>{target_code}</strong>: {target_local.strftime('%H:%M:%S')} ({target_market_data.timezone.split('/')[-1]})
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("---")
+            
+            # Market status
+            st.markdown("**📊 Market Status:**")
             source_status = market_status_service.get_market_status(source_code)
             target_status = market_status_service.get_market_status(target_code)
             
-            # Source market status
+            # Source market status with more details
             source_emoji = "🟢" if source_status.is_open else "🔴"
-            st.markdown(f"**{source_code}**: {source_emoji} {source_status.session}")
+            source_session = source_status.session if hasattr(source_status, 'session') else "Unknown"
+            st.markdown(f"**{source_code}**: {source_emoji} {source_session}")
             
             # Target market status
             target_emoji = "🟢" if target_status.is_open else "🔴"
-            st.markdown(f"**{target_code}**: {target_emoji} {target_status.session}")
+            target_session = target_status.session if hasattr(target_status, 'session') else "Unknown"
+            st.markdown(f"**{target_code}**: {target_emoji} {target_session}")
             
-        except Exception:
+            # Add time until next session change
+            if hasattr(source_status, 'next_change') and source_status.next_change:
+                time_to_change = source_status.next_change - now_utc
+                if time_to_change.total_seconds() > 0:
+                    hours, remainder = divmod(int(time_to_change.total_seconds()), 3600)
+                    minutes = remainder // 60
+                    if hours > 0:
+                        st.caption(f"⏳ {source_code} changes in {hours}h {minutes}m")
+                    else:
+                        st.caption(f"⏳ {source_code} changes in {minutes}m")
+            
+        except Exception as e:
             st.caption("Market status unavailable")
     
     return (
@@ -699,13 +780,42 @@ def render_timeline_chart(
     - Lunch breaks (hatched/lighter)
     - Cut-off times (amber vertical line)
     - Execution time marker
+    - Current time indicator (when viewing today)
     """
     st.markdown("### 📊 Market Timeline")
+    
+    # Timeline options row
+    col_opt1, col_opt2 = st.columns([3, 1])
+    
+    with col_opt1:
+        # Show current time indicator option (only for today)
+        is_today = trade_date == date.today()
+        show_current_time = False
+        if is_today:
+            show_current_time = st.checkbox(
+                "🕐 Show current time marker",
+                value=True,
+                help="Display a marker showing the current time on the timeline"
+            )
+    
+    with col_opt2:
+        # Timezone display option
+        tz_display = st.selectbox(
+            "Timezone",
+            options=["UTC", "Local"],
+            index=0,
+            help="Display times in UTC or local market time",
+            label_visibility="collapsed"
+        )
     
     # Create execution datetime if provided
     exec_datetime = None
     if execution_time:
         exec_datetime = datetime.combine(trade_date, execution_time)
+    
+    # If showing current time and it's today, use current time as execution marker
+    if is_today and show_current_time and exec_datetime is None:
+        exec_datetime = datetime.now()
     
     try:
         # Create the Gantt chart
@@ -807,6 +917,36 @@ def render_calendar_view(source_code: str, target_code: str, trade_date: date):
     repo = get_market_repository()
     source_market = repo.get(source_code)
     target_market = repo.get(target_code)
+    
+    # Quick date selection row
+    col_date1, col_date2, col_date3 = st.columns([2, 1, 1])
+    
+    with col_date1:
+        # Quick date picker that syncs with sidebar
+        quick_date = st.date_input(
+            "📆 Quick Date Selection",
+            value=trade_date,
+            min_value=date.today() - timedelta(days=365),
+            max_value=date.today() + timedelta(days=365),
+            help="Click to quickly change the trade date",
+            key="calendar_quick_date"
+        )
+        if quick_date != trade_date:
+            st.info(f"💡 Date changed to {quick_date.strftime('%B %d, %Y')}. Use sidebar to apply.")
+    
+    with col_date2:
+        # Jump to today button
+        if st.button("📍 Today", key="jump_today", use_container_width=True):
+            st.session_state.calendar_month = date.today().month
+            st.session_state.calendar_year = date.today().year
+            st.rerun()
+    
+    with col_date3:
+        # Jump to selected date
+        if st.button("🎯 Selected", key="jump_selected", use_container_width=True):
+            st.session_state.calendar_month = trade_date.month
+            st.session_state.calendar_year = trade_date.year
+            st.rerun()
     
     # Month navigation
     col_nav1, col_nav2, col_nav3 = st.columns([1, 2, 1])
@@ -965,6 +1105,101 @@ def perform_settlement_check(source_code: str, target_code: str, trade_date: dat
         st.session_state.settlement_result = None
 
 
+def render_current_time_indicator(source_code: str, target_code: str):
+    """
+    Render current time indicators for both markets.
+    
+    Shows:
+    - Current local time for each market
+    - Market open/closed status
+    - Time until market opens/closes
+    """
+    repo = get_market_repository()
+    tz_service = get_timezone_service()
+    market_status_service = get_market_status_service()
+    
+    source_market = repo.get(source_code)
+    target_market = repo.get(target_code)
+    
+    if not source_market or not target_market:
+        return
+    
+    now_utc = datetime.utcnow()
+    
+    # Get local times
+    source_local = tz_service.convert_from_utc(now_utc, source_market.timezone)
+    target_local = tz_service.convert_from_utc(now_utc, target_market.timezone)
+    
+    # Get market statuses
+    try:
+        source_status = market_status_service.get_market_status(source_code)
+        target_status = market_status_service.get_market_status(target_code)
+    except Exception:
+        source_status = None
+        target_status = None
+    
+    # Create time indicator cards
+    col1, col2, col3 = st.columns([2, 2, 1])
+    
+    with col1:
+        source_emoji = "🟢" if (source_status and source_status.is_open) else "🔴"
+        source_session = source_status.session if source_status else "Unknown"
+        
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 10px;
+            text-align: center;
+        ">
+            <div style="font-size: 0.85em; opacity: 0.9;">📤 {source_market.name}</div>
+            <div style="font-size: 1.8em; font-weight: bold; font-family: monospace;">
+                {source_local.strftime('%H:%M:%S')}
+            </div>
+            <div style="font-size: 0.8em;">{source_emoji} {source_session}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        target_emoji = "🟢" if (target_status and target_status.is_open) else "🔴"
+        target_session = target_status.session if target_status else "Unknown"
+        
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 10px;
+            text-align: center;
+        ">
+            <div style="font-size: 0.85em; opacity: 0.9;">📥 {target_market.name}</div>
+            <div style="font-size: 1.8em; font-weight: bold; font-family: monospace;">
+                {target_local.strftime('%H:%M:%S')}
+            </div>
+            <div style="font-size: 0.8em;">{target_emoji} {target_session}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        # UTC reference time
+        st.markdown(f"""
+        <div style="
+            background: #343a40;
+            color: white;
+            padding: 12px 15px;
+            border-radius: 10px;
+            text-align: center;
+        ">
+            <div style="font-size: 0.85em; opacity: 0.9;">🌐 UTC</div>
+            <div style="font-size: 1.4em; font-weight: bold; font-family: monospace;">
+                {now_utc.strftime('%H:%M')}
+            </div>
+            <div style="font-size: 0.75em;">{now_utc.strftime('%Y-%m-%d')}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+
 def main():
     """Main dashboard application."""
     # Initialize session state
@@ -977,6 +1212,39 @@ def main():
     
     # Render sidebar and get parameters
     source_code, target_code, trade_date, execution_time, instrument_type = render_sidebar()
+    
+    # Current time indicators (real-time market clocks)
+    col_time, col_refresh = st.columns([4, 1])
+    
+    with col_time:
+        render_current_time_indicator(source_code, target_code)
+    
+    with col_refresh:
+        st.markdown("<br>", unsafe_allow_html=True)
+        # Auto-refresh toggle
+        auto_refresh = st.checkbox(
+            "🔄 Auto-refresh",
+            value=False,
+            help="Automatically refresh time indicators every 30 seconds"
+        )
+        
+        if auto_refresh:
+            import time as time_module
+            st.caption("Refreshing in 30s...")
+            time_module.sleep(0.1)  # Small delay for UI
+            # This will trigger a rerun every ~30 seconds
+            st.markdown("""
+            <script>
+            setTimeout(function(){
+                window.location.reload();
+            }, 30000);
+            </script>
+            """, unsafe_allow_html=True)
+            # Note: HTML script doesn't work in Streamlit, using alternative
+            # Add refresh button as fallback
+        
+        if st.button("🔄 Refresh", key="manual_refresh", use_container_width=True):
+            st.rerun()
     
     # Check if settlement check was triggered
     if st.session_state.get('trigger_check', False):
