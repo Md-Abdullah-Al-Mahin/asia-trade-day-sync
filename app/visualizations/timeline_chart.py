@@ -122,16 +122,16 @@ def create_trading_hours_gantt(
     # Create figure
     fig = go.Figure()
     
-    # Muted, readable palette (works on light and dark)
+    # Clearly distinct: green = market A, blue = market B (no similar teals)
     colors = {
-        "trading_a": "#059669",       # Muted green
-        "trading_b": "#0d9488",      # Muted teal
-        "lunch": "#d4d4d8",          # Neutral gray for lunch
-        "closed": "#f4f4f5",         # Very light gray
-        "holiday": "#b91c1c",        # Muted red
-        "cutoff": "#ea580c",         # Muted orange
-        "execution": "#7c3aed",      # Muted violet
-        "overlap": "rgba(148, 163, 184, 0.25)",  # Soft slate fill, no busy border
+        "trading_a": "#059669",       # Green — Japan
+        "trading_b": "#2563eb",       # Blue — Hong Kong
+        "lunch": "#94a3b8",           # Slate gray — lunch break (obviously not trading)
+        "closed": "#f1f5f9",         # Very light gray
+        "holiday": "#b91c1c",         # Red
+        "cutoff": "#ea580c",          # Orange
+        "execution": "#7c3aed",       # Violet
+        "overlap": "rgba(100, 116, 139, 0.2)",   # Subtle overlap band
     }
     
     # Y positions and bar size (larger bars for clarity)
@@ -204,14 +204,13 @@ def create_trading_hours_gantt(
             )
             a_sessions.append((times_a["open_utc"], times_a["lunch_start_utc"]))
             
-            # Lunch break
+            # Lunch break (clearly gray, no white border so it reads as "break")
             fig.add_shape(
                 type="rect",
                 x0=times_a["lunch_start_utc"], x1=times_a["lunch_end_utc"],
                 y0=y_market_a - bar_height, y1=y_market_a + bar_height,
                 fillcolor=colors["lunch"],
-                opacity=0.7,
-                line=dict(width=1, color="white"),
+                line=dict(width=0),
                 layer="below"
             )
             
@@ -289,8 +288,7 @@ def create_trading_hours_gantt(
                 x0=times_b["lunch_start_utc"], x1=times_b["lunch_end_utc"],
                 y0=y_market_b - bar_height, y1=y_market_b + bar_height,
                 fillcolor=colors["lunch"],
-                opacity=0.7,
-                line=dict(width=1, color="white"),
+                line=dict(width=0),
                 layer="below"
             )
             
@@ -390,10 +388,15 @@ def create_trading_hours_gantt(
             showlegend=True
         ))
     
-    # Add execution time marker if provided
+    # Execution time: if naive, treat as source market (market_a) local time so the line lands in the right place
     if execution_time:
-        exec_utc = execution_time.astimezone(ZoneInfo("UTC")) if execution_time.tzinfo else \
-                   datetime.combine(target_date, execution_time.time(), tzinfo=ZoneInfo("UTC"))
+        if execution_time.tzinfo:
+            exec_utc = execution_time.astimezone(ZoneInfo("UTC"))
+        else:
+            # Sidebar "10:00" = 10:00 in source market (e.g. Tokyo) → convert to UTC
+            tz_a = ZoneInfo(market_a.timezone)
+            exec_local = datetime.combine(target_date, execution_time.time(), tzinfo=tz_a)
+            exec_utc = exec_local.astimezone(ZoneInfo("UTC"))
         
         fig.add_shape(
             type="line",
@@ -401,17 +404,20 @@ def create_trading_hours_gantt(
             y0=-0.5, y1=1.5,
             line=dict(color=colors["execution"], width=2)
         )
+        # Label with local time so it's clear (e.g. "Execution 10:00 Tokyo")
+        exec_local_str = exec_utc.astimezone(ZoneInfo(market_a.timezone)).strftime("%H:%M")
+        tz_short = market_a.timezone.split("/")[-1].replace("_", " ")
         fig.add_trace(go.Scatter(
             x=[exec_utc],
             y=[1.6],
             mode="markers+text",
             marker=dict(color=colors["execution"], size=12, symbol="diamond"),
-            text=["Execution"],
+            text=[f"Execution {exec_local_str} {tz_short}"],
             textposition="top center",
             textfont=dict(size=10, color=colors["execution"]),
             name="Execution",
             showlegend=True,
-            hovertemplate=f"Execution {exec_utc.strftime('%H:%M')} UTC<extra></extra>"
+            hovertemplate=f"Execution {exec_local_str} {tz_short} = {exec_utc.strftime('%H:%M')} UTC<extra></extra>"
         ))
     
     # Show both local and UTC so the chart is self-explanatory
@@ -428,10 +434,6 @@ def create_trading_hours_gantt(
             x=0.5,
             xanchor="center",
             font=titlefont,
-            subtitle=dict(
-                text="Time axis is UTC. Bars show when each market is open (local hours in UTC).",
-                font=dict(size=11, color="#64748b"),
-            ),
         ),
         xaxis=dict(
             title=dict(text="Time (UTC)", font=dict(size=12, color="#374151")),
@@ -456,7 +458,7 @@ def create_trading_hours_gantt(
             zeroline=False,
         ),
         height=420,
-        margin=dict(l=220, r=48, t=88, b=64),
+        margin=dict(l=220, r=48, t=56, b=52),
         legend=dict(
             orientation="h",
             yanchor="bottom",
